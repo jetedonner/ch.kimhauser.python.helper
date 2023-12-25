@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 
+from enum import Enum
+
 from PyQt6.QtCore import QObject, QSize, QPointF, QPropertyAnimation, QEasingCurve, pyqtProperty, pyqtSlot, Qt, pyqtSignal
 from PyQt6.QtGui import  QPainter, QPalette, QLinearGradient, QGradient
 from PyQt6.QtWidgets import QAbstractButton, QApplication, QWidget, QHBoxLayout, QLabel
 from PyQt6.QtGui import QColor
+
+class SwitchSize(Enum):
+	Small = 1
+	Medium = 2
+	Large = 3
+	
 
 class SwitchPrivate(QObject):
 	
@@ -37,33 +45,35 @@ class SwitchPrivate(QObject):
 		
 	def draw(self, painter):
 		r = self.mPointer.rect()
-		margin = r.height()/10
-		shadow = self.mPointer.palette().color(QPalette.ColorRole.Dark)
-		light = self.mPointer.palette().color(QPalette.ColorRole.Light)
-		button = self.mPointer.palette().color(QPalette.ColorRole.Button)
+		margin = (r.height()/10)
+		self.shadow = self.mPointer.palette().color(QPalette.ColorRole.Dark)
+		self.light = self.mPointer.palette().color(QPalette.ColorRole.Light)
+		self.button = self.mPointer.palette().color(QPalette.ColorRole.Button)
+		painter.setPen(Qt.PenStyle.NoPen)
 #		painter.setPen(PyQt6.QtGui.NoPen)
 		
-		self.mGradient.setColorAt(0, shadow.darker(30))
-		self.mGradient.setColorAt(1, light.darker(30))
+		self.mGradient.setColorAt(0, self.currentColor.darker(30))
+		self.mGradient.setColorAt(1, self.currentColor.darker(30))
 		self.mGradient.setStart(0, r.height())
 		self.mGradient.setFinalStop(0, 0)
 		painter.setBrush(self.mGradient)
 		painter.drawRoundedRect(r, r.height()/2, r.height()/2)
 		
-		self.mGradient.setColorAt(0, self.currentColor.darker(40))
-		self.mGradient.setColorAt(1, self.currentColor.darker(60))
+		self.mGradient.setColorAt(0, self.shadow.darker(40))
+		self.mGradient.setColorAt(1, self.light.darker(60))
 		self.mGradient.setStart(0, 0)
 		self.mGradient.setFinalStop(0, r.height())
 		painter.setBrush(self.mGradient)
 		painter.drawRoundedRect(r.adjusted(int(margin), int(margin), int(-margin), int(-margin)), r.height()/2, r.height()/2)
 		
-		self.mGradient.setColorAt(0, button.darker(30))
+		self.mGradient.setColorAt(0, self.button.lighter(80))
 		self.mGradient.setColorAt(1, self.currentColor)
 		
 		painter.setBrush(self.mGradient)
 		
+		marginInner = margin + 2
 		x = r.height()/2.0 + self.mPosition*(r.width()-r.height())
-		painter.drawEllipse(QPointF(x, r.height()/2), r.height()/2-margin, r.height()/2-margin)
+		painter.drawEllipse(QPointF(x, r.height()/2), (r.height()/2)-marginInner, (r.height()/2)-marginInner)
 		
 	@pyqtSlot(bool, name='animate')
 	def animate(self, checked):
@@ -79,14 +89,23 @@ class SwitchPrivate(QObject):
 class Switch(QAbstractButton):
 	
 	checked = pyqtSignal(bool)
+	switchSize:SwitchSize = SwitchSize.Small
 	
-	def __init__(self, parent=None):
+	def __init__(self, switchSize:SwitchSize = SwitchSize.Small, parent=None):
 		QAbstractButton.__init__(self, parent=parent)
 		self.dPtr = SwitchPrivate(self)
+		self.switchSize = switchSize
 		self.setCheckable(True)
 		self.clicked.connect(self.dPtr.animate)
 		self.clicked.connect(self.animate)
-		self.setMaximumSize(QSize(36, 21))
+		
+		fixedSize = QSize(48, 29)
+		if self.switchSize == SwitchSize.Small:
+			fixedSize = QSize(36, 21)
+		elif self.switchSize == SwitchSize.Large:
+			fixedSize = QSize(84, 42)
+		self.setFixedSize(fixedSize)
+#		self.setMaximumSize(QSize(36, 21))
 	
 	@pyqtSlot(bool) #, name='animate')
 	def animate(self, checked):
@@ -97,8 +116,12 @@ class Switch(QAbstractButton):
 		self.setChecked(checked)
 		self.dPtr.animate(checked)
 		
-	def sizeHint(self):
-		return QSize(84, 42)
+#	def sizeHint(self):
+#		if self.switchSize == SwitchSize.Small:
+#			return QSize(36, 21)
+#		elif self.switchSize == SwitchSize.Medium:
+#			return QSize(48, 29)
+#		return QSize(84, 42)
 	
 	def paintEvent(self, event):
 		painter = QPainter(self)
@@ -112,9 +135,11 @@ class QSwitch(QWidget):
 	
 	checked = pyqtSignal(bool)
 	
-	def __init__(self, descTxt:str, parent=None):
+	switchSize:SwitchSize = SwitchSize.Small
+	
+	def __init__(self, descTxt:str, switchSize:SwitchSize = SwitchSize.Small, parent=None):
 		QWidget.__init__(self, parent=parent)
-		self.switch = Switch()
+		self.switch = Switch(switchSize)
 		self.switch.checked.connect(self.checked_changed)
 		self.setLayout(QHBoxLayout())
 		self.layout().addWidget(self.switch)
@@ -131,6 +156,6 @@ class QSwitch(QWidget):
 if __name__ == '__main__':
 	import sys
 	app = QApplication(sys.argv)
-	w = Switch()
+	w = QSwitch("HELLO QSwitch", SwitchSize.Large)
 	w.show()
 	sys.exit(app.exec())
