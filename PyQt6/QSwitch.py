@@ -2,10 +2,11 @@
 
 from enum import Enum
 
-from PyQt6.QtCore import QObject, QSize, QPointF, QPropertyAnimation, QEasingCurve, pyqtProperty, pyqtSlot, Qt, pyqtSignal
-from PyQt6.QtGui import  QPainter, QPalette, QLinearGradient, QGradient
-from PyQt6.QtWidgets import QAbstractButton, QApplication, QWidget, QHBoxLayout, QLabel
-from PyQt6.QtGui import QColor
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
+
+from PyQt6.QtWidgets import *
+from PyQt6 import uic, QtWidgets
 
 class SwitchSize(Enum):
 	Small = 1
@@ -134,28 +135,49 @@ class Switch(QAbstractButton):
 class QSwitch(QWidget):
 	
 	checked = pyqtSignal(bool)
-	
 	switchSize:SwitchSize = SwitchSize.Small
 	
 	def __init__(self, descTxt:str, switchSize:SwitchSize = SwitchSize.Small, parent=None):
 		QWidget.__init__(self, parent=parent)
 		self.switch = Switch(switchSize)
 		self.switch.checked.connect(self.checked_changed)
+		self.switch.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 		self.setLayout(QHBoxLayout())
 		self.layout().addWidget(self.switch)
 		self.lblDesc = QLabel(descTxt)
+		self.lblDesc.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 		self.layout().addWidget(self.lblDesc)
-	
+		
 	def setChecked(self, checked):
 		self.switch.setCheckedNG(checked)
 		
 	@pyqtSlot(bool)
 	def checked_changed(self, checked):
-		self.checked.emit(checked)		
+		self.checked.emit(checked)
+		
+class QSwitchDemoWindow(QMainWindow):
+	"""PyMobiledevice3GUI's main window (GUI or view)."""
+	
+	def __init__(self):
+		super().__init__()
+		self.setWindowTitle("QSwitch - Demo app v0.0.1")
+		
+		self.setLayout(QVBoxLayout())
+		
+		swtSmallAbove = QSwitch("QSwitch-Small, label above", SwitchSize.Small)
+		swtSmallBelow = QSwitch("QSwitch-Medium, label below", SwitchSize.Medium)
+		swtSmallBefore = QSwitch("QSwitch-Large, label before", SwitchSize.Large)
+		swtSmallAfter = QSwitch("QSwitch-Small, label after", SwitchSize.Small)
+		
+		self.layout().addWidget(swtSmallAbove)
+#		self.layout().addWidget(swtSmallBelow)
+
 		
 if __name__ == '__main__':
 	import sys
 	app = QApplication(sys.argv)
-	w = QSwitch("HELLO QSwitch", SwitchSize.Large)
-	w.show()
+#	w = QSwitch("HELLO QSwitch", SwitchSize.Large)
+#	w.show()
+	win = QSwitchDemoWindow()
+	win.show()
 	sys.exit(app.exec())
