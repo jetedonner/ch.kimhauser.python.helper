@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
 
+# -*- coding: utf-8 -*-
+
+"""
+	QSwitch v.0.0.1 - 2023-12-28 (Python3 / PyQt6 GUI extension)
+
+	This is a new Python 3 / PyQt6 Widget that acts like a checkbox but displays a toggle switch.
+	The widget aims to follow the PyQt6 coding guidelines and has - beside PyQt6 - no dependensies.
+	The drawing of the switch is completely done with PyQt6 functionality
+
+	Author:		DaVe inc. Kim-David Hauser
+	License:	MIT
+	Git:		https://github.com/jetedonner/ch.kimhauser.python.helper
+	Website:	https://kimhauser.ch
+"""
+		
 from enum import Enum
 
 from PyQt6.QtGui import *
@@ -13,7 +28,12 @@ class SwitchSize(Enum):
 	Medium = 2
 	Large = 3
 	
-
+class SwitchLabelPos(Enum):
+	Leading = 1
+	Trailing = 2
+	Above = 3
+	Below = 4
+	
 class SwitchPrivate(QObject):
 	
 	currentColor = QColor("blue")
@@ -51,7 +71,6 @@ class SwitchPrivate(QObject):
 		self.light = self.mPointer.palette().color(QPalette.ColorRole.Light)
 		self.button = self.mPointer.palette().color(QPalette.ColorRole.Button)
 		painter.setPen(Qt.PenStyle.NoPen)
-#		painter.setPen(PyQt6.QtGui.NoPen)
 		
 		self.mGradient.setColorAt(0, self.currentColor.darker(30))
 		self.mGradient.setColorAt(1, self.currentColor.darker(30))
@@ -67,7 +86,7 @@ class SwitchPrivate(QObject):
 		painter.setBrush(self.mGradient)
 		painter.drawRoundedRect(r.adjusted(int(margin), int(margin), int(-margin), int(-margin)), r.height()/2, r.height()/2)
 		
-		self.mGradient.setColorAt(0, self.button.lighter(80))
+		self.mGradient.setColorAt(0, self.light.darker(40))
 		self.mGradient.setColorAt(1, self.currentColor)
 		
 		painter.setBrush(self.mGradient)
@@ -92,30 +111,44 @@ class Switch(QAbstractButton):
 	checked = pyqtSignal(bool)
 	switchSize:SwitchSize = SwitchSize.Small
 	
-	def __init__(self, switchSize:SwitchSize = SwitchSize.Small, parent=None):
+	def __init__(self, switchSize:SwitchSize = SwitchSize.Small, switchChecked = False, parent=None):
 		QAbstractButton.__init__(self, parent=parent)
+		self._switchChecked = switchChecked
 		self.dPtr = SwitchPrivate(self)
 		self.switchSize = switchSize
 		self.setCheckable(True)
-		self.clicked.connect(self.dPtr.animate)
 		self.clicked.connect(self.animate)
+		self.setSwitchSize(switchSize)
 		
+	def setSwitchSize(self, switchSize:SwitchSize = SwitchSize.Small):
 		fixedSize = QSize(48, 29)
 		if self.switchSize == SwitchSize.Small:
 			fixedSize = QSize(36, 21)
 		elif self.switchSize == SwitchSize.Large:
 			fixedSize = QSize(84, 42)
 		self.setFixedSize(fixedSize)
-#		self.setMaximumSize(QSize(36, 21))
 	
-	@pyqtSlot(bool) #, name='animate')
+	@pyqtSlot(bool)
 	def animate(self, checked):
-		self.dPtr.animate(checked)
-		self.checked.emit(checked)
-		
-	def setCheckedNG(self, checked):
 		self.setChecked(checked)
 		self.dPtr.animate(checked)
+		self.checked.emit(checked)
+	
+	@property
+	def switchChecked(self):
+		return self._switchChecked
+	
+	@switchChecked.setter
+	def switchChecked(self, new_switchChecked):
+		if not isinstance(new_switchChecked, bool):
+			raise TypeError('checked must be a bool')
+		self._switchChecked = new_switchChecked
+		self.setChecked(new_switchChecked)
+		self.dPtr.animate(new_switchChecked)
+		
+#	def setCheckedNG(self, checked):
+#		self.setChecked(checked)
+#		self.dPtr.animate(checked)
 		
 #	def sizeHint(self):
 #		if self.switchSize == SwitchSize.Small:
@@ -135,26 +168,62 @@ class Switch(QAbstractButton):
 class QSwitch(QWidget):
 	
 	checked = pyqtSignal(bool)
-	switchSize:SwitchSize = SwitchSize.Small
 	
-	def __init__(self, descTxt:str, switchSize:SwitchSize = SwitchSize.Small, parent=None):
+	switchSize:SwitchSize = SwitchSize.Small
+	switchLabelPos:SwitchLabelPos = SwitchLabelPos.Trailing
+	
+	def foo(self, event, **kwargs):
+		if self.lblToggleSwitch:
+			self.switch.animate(not self.switch.isChecked())
+		
+	@property
+	def lblToggleSwitch(self):
+		return self._lblToggleSwitch
+	
+	@lblToggleSwitch.setter
+	def lblToggleSwitch(self, new_lblToggleSwitch):
+		if not isinstance(new_lblToggleSwitch, bool):
+			raise TypeError('lblToggleSwitch must be a bool')
+		self._lblToggleSwitch = new_lblToggleSwitch
+			
+	def __init__(self, descTxt:str, switchSize:SwitchSize = SwitchSize.Small, switchLabelPos:SwitchLabelPos = SwitchLabelPos.Trailing, lblToggleSwitch = True, parent=None):
 		QWidget.__init__(self, parent=parent)
+		self.switchLabelPos = switchLabelPos
+		self._lblToggleSwitch = lblToggleSwitch
+		
 		self.switch = Switch(switchSize)
 		self.switch.checked.connect(self.checked_changed)
-		self.switch.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-		self.setLayout(QHBoxLayout())
-		self.layout().addWidget(self.switch)
 		self.lblDesc = QLabel(descTxt)
-		self.lblDesc.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-		self.layout().addWidget(self.lblDesc)
+		self.lblDesc.mousePressEvent = self.foo
+		if self.switchLabelPos == SwitchLabelPos.Leading or self.switchLabelPos == SwitchLabelPos.Trailing:
+			self.setLayout(QHBoxLayout())
+			if self.switchLabelPos == SwitchLabelPos.Leading:
+				self.layout().addWidget(self.lblDesc)
+				self.layout().addWidget(self.switch)
+			else:
+				self.layout().addWidget(self.switch)
+				self.layout().addWidget(self.lblDesc)
+		else:
+			self.setLayout(QVBoxLayout())
+			if self.switchLabelPos == SwitchLabelPos.Below:
+				self.layout().addWidget(self.switch)
+				self.layout().addWidget(self.lblDesc)
+			else:
+				self.layout().addWidget(self.lblDesc)
+				self.layout().addWidget(self.switch)
+		self.margin = QMargins(0, 0, 0, 0)
+		self.layout().setContentsMargins(self.margin)
+#		self.switch.setContentsMargins(self.margin)
+#		self.lblDesc.setContentsMargins(self.margin)
+#		self.setContentsMargins(self.margin)
 		
 	def setChecked(self, checked):
-		self.switch.setCheckedNG(checked)
+		self.switch.switchChecked = checked
 		
 	@pyqtSlot(bool)
 	def checked_changed(self, checked):
 		self.checked.emit(checked)
-		
+
 class QSwitchDemoWindow(QMainWindow):
 	"""PyMobiledevice3GUI's main window (GUI or view)."""
 	
@@ -162,22 +231,27 @@ class QSwitchDemoWindow(QMainWindow):
 		super().__init__()
 		self.setWindowTitle("QSwitch - Demo app v0.0.1")
 		
-		self.setLayout(QVBoxLayout())
+		self.layMain = QVBoxLayout()
+		self.wdtMain = QWidget()
+		self.wdtMain.setLayout(self.layMain)
 		
-		swtSmallAbove = QSwitch("QSwitch-Small, label above", SwitchSize.Small)
-		swtSmallBelow = QSwitch("QSwitch-Medium, label below", SwitchSize.Medium)
-		swtSmallBefore = QSwitch("QSwitch-Large, label before", SwitchSize.Large)
-		swtSmallAfter = QSwitch("QSwitch-Small, label after", SwitchSize.Small)
-		
-		self.layout().addWidget(swtSmallAbove)
-#		self.layout().addWidget(swtSmallBelow)
+		swtSmallAbove = QSwitch("QSwitch-Small, label above", SwitchSize.Small, SwitchLabelPos.Above)
+		swtSmallBelow = QSwitch("QSwitch-Medium, label below", SwitchSize.Medium, SwitchLabelPos.Below)
+		swtSmallBefore = QSwitch("QSwitch-Large, label leading", SwitchSize.Large, SwitchLabelPos.Leading)
+		swtSmallAfter = QSwitch("QSwitch-Small, label trailing", SwitchSize.Small, SwitchLabelPos.Trailing)
 
+		self.lblDesc = QLabel(f"This is a rought demo of the usage of QSwitch\nwith a mixed matrix of its options")
+		self.layMain.addWidget(self.lblDesc)
 		
+		self.layMain.addWidget(swtSmallAbove)
+		self.layMain.addWidget(swtSmallBelow)
+		self.layMain.addWidget(swtSmallBefore)
+		self.layMain.addWidget(swtSmallAfter)
+		self.setCentralWidget(self.wdtMain)
+
 if __name__ == '__main__':
 	import sys
 	app = QApplication(sys.argv)
-#	w = QSwitch("HELLO QSwitch", SwitchSize.Large)
-#	w.show()
 	win = QSwitchDemoWindow()
 	win.show()
 	sys.exit(app.exec())
