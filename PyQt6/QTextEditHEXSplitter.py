@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
 
+# -*- coding: utf-8 -*-
+
+"""
+	QHEXTextEdit / QTextEditHEXSplitter v.0.0.1 - 2023-12-28 (Python3 / PyQt6 GUI extension)
+
+	This are two new Python 3 / PyQt6 Widgets that show text values in a QTextEdit and a synchronized specialized QTextEdit namely QHEXTextEdit to represent the string as HEX value.
+	The widget aims to follow the PyQt6 coding guidelines and has - beside PyQt6 - no dependensies.
+	The drawing of the switch is completely done with PyQt6 functionality
+
+	Author:		DaVe inc. Kim-David Hauser
+	License:	MIT
+	Git:		https://github.com/jetedonner/ch.kimhauser.python.helper
+	Website:	https://kimhauser.ch
+"""
+	
+import array
 from enum import Enum
 
 from PyQt6.QtGui import *
@@ -12,17 +28,38 @@ from PyQt6 import uic, QtWidgets
 #	Small = 1
 #	Medium = 2
 #	Large = 3
-#	
-#class SwitchLabelPos(Enum):
-#	Leading = 1
-#	Trailing = 2
-#	Above = 3
-#	Below = 4
+#
+
+class QHEXTextEdit(QTextEdit):
+	
+	def __init__(self, parent=None):
+		QTextEdit.__init__(self, parent=parent)
+		cf = QTextCharFormat()
+		cf.setFontCapitalization(QFont.Capitalization.AllUppercase)
+		self.setCurrentCharFormat(cf)
+	
+	def keyPressEvent(self, event):
+		key = event.key()
+#		event.text().hex
+#		event.text().isalnum() or 
+		if key in (Qt.Key.Key_0, Qt.Key.Key_1, Qt.Key.Key_2, Qt.Key.Key_3, Qt.Key.Key_4, Qt.Key.Key_5, Qt.Key.Key_6, Qt.Key.Key_7, Qt.Key.Key_8, Qt.Key.Key_9, Qt.Key.Key_A, Qt.Key.Key_B, Qt.Key.Key_C, Qt.Key.Key_D, Qt.Key.Key_E, Qt.Key.Key_F, Qt.Key.Key_Space, Qt.Key.Key_Backspace, Qt.Key.Key_Delete, Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
+			super().keyPressEvent(event)
+		else:
+			event.ignore()
 		
 class QTextEditHEXSplitter(QWidget):
 		
-	def __init__(self, parent=None): #, descTxt:str, switchSize:SwitchSize = SwitchSize.Small, switchLabelPos:SwitchLabelPos = SwitchLabelPos.Trailing, parent=None):
+	updateTxt:bool = True
+	updateHexTxt:bool = True
+	
+	updateSel:bool = True
+	updateHexSel:bool = True
+	
+	def __init__(self, parent=None):
 		QWidget.__init__(self, parent=parent)
+		
+		self.updateTxt = True
+		self.updateHexTxt = True
 		
 		self.layMain = QVBoxLayout()
 		self.setLayout(self.layMain)
@@ -31,15 +68,16 @@ class QTextEditHEXSplitter(QWidget):
 		
 		self.txtMultiline = QTextEdit()
 		self.txtMultiline.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-#		self.txtMultiline.textChanged.connect(self.txtMultiline_textchanged)
+		self.txtMultiline.textChanged.connect(self.txtMultiline_textchanged)
 		self.txtMultiline.selectionChanged.connect(self.txtMultiline_selectionchanged)
 		
-		self.txtMultilineHex = QTextEdit()
+		self.txtMultilineHex = QHEXTextEdit()
 		self.txtMultilineHex.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+		self.txtMultilineHex.textChanged.connect(self.txtMultilineHex_textchanged)
+		self.txtMultilineHex.selectionChanged.connect(self.txtMultilineHex_selectionchanged)
 		
 		self.splitter.addWidget(self.txtMultiline)
 		self.splitter.addWidget(self.txtMultilineHex)
-#		self.layMain.addWidget(self.splitter)
 		
 		self.showHex = QCheckBox("HEX View")
 		self.showHex.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
@@ -59,7 +97,6 @@ class QTextEditHEXSplitter(QWidget):
 		widTop = QWidget()
 		widTop.setLayout(layoutTop)
 		
-#		layoutTop.addWidget(self.instructionsLabel)
 		layoutTop.addStretch()
 		layoutTop.addWidget(encodingLabel)
 		layoutTop.addWidget(self.cmbEncoding)
@@ -69,121 +106,103 @@ class QTextEditHEXSplitter(QWidget):
 		self.layMain.addWidget(widTop)
 		self.layMain.addWidget(self.splitter)
 		
-		self.setText("KIM SAYS: Some amended Text to test the new to HEX function and the save function fix - IT WORKS!!! KIMs amendent ... Some addition!!!")
+		self.setText("DEV SAYS: Some amended text to test the new toHEX() function and the save function fix - IT WORKS!!! DEVs amendment ... Some addition!!!")
 		
-#		layButtons = QHBoxLayout()
-#		widButtons = QWidget()
-#		widButtons.setLayout(layButtons)
-#		
-#		layButtons.addStretch()
-#		
-#		# Add the buttons to the layout
-#		layButtons.addWidget(self.confirmButton, Qt.AlignmentFlag.AlignRight)
-#		layButtons.addWidget(self.cancelButton, Qt.AlignmentFlag.AlignRight)
-#		
-#		layButtons.addWidget(self.confirmButton)
-#		layButtons.addWidget(self.cancelButton)
-#		
-#		layout.addWidget(widButtons)
-#		
-#		# Set the layout of the dialog
-#		self.setLayout(layout)
+	def txtMultilineHex_textchanged(self):
+		if not self.updateHexTxt:
+			return
+		
+		print("txtMultilineHex_textchanged")
+		try:
+			hex_string = self.txtMultilineHex.toPlainText()
+			bytes_list = bytearray.fromhex(hex_string)
+			ascii_text = bytes_list.decode("utf-8")
+#			print(ascii_text)
+			self.updateHexTxt = False
+			self.updateTxt = False
+			self.txtMultiline.setText(ascii_text)
+			self.updateHexTxt = True
+			self.updateTxt = True
+		except Exception as e:
+			pass
+		pass
+		
+	def txtMultilineHex_selectionchanged(self):
+		if not self.updateHexSel:
+			return
+		cursor = self.txtMultilineHex.textCursor()
+		print("txtMultilineHex Selection start: %d end: %d" % (cursor.selectionStart(), cursor.selectionEnd()))
+		
+		self.txtMultiline.setStyleSheet("background-color: control;")
+		
+		c = self.txtMultiline.textCursor()
+		c.clearSelection()
+		txtLen = len(self.txtMultiline.toPlainText())
+		startPos = int(cursor.selectionStart() / 3)
+		if startPos > txtLen:
+			startPos -= 1
+		c.setPosition(startPos)
+		endPos = int((cursor.selectionEnd() + 1) / 3)
+		if endPos > txtLen:
+			endPos -= 1
+		print(f"txtLen = {txtLen}")
+		c.setPosition(endPos, QTextCursor.MoveMode.KeepAnchor)
+		self.txtMultiline.setStyleSheet("selection-background-color: #ff0000;")
+		self.updateHexSel = False
+		self.updateSel = False
+		self.txtMultiline.setTextCursor(c)
+		self.updateHexSel = True
+		self.updateSel = True
+		self.txtMultiline.ensureCursorVisible()
+		
+	def txtMultiline_textchanged(self):
+		if not self.updateTxt:
+			return
+		
+		print("txtMultiline_textchanged")
+		self.updateTxt = False
+		self.updateHexTxt = False
+		self.setTxtHex()
+		#		cursor.setPosition(pos)
+		self.updateTxt = True
+		self.updateHexTxt = True
 		
 	def txtMultiline_selectionchanged(self):
+		if not self.updateSel:
+			return
 		cursor = self.txtMultiline.textCursor()
-		print("Selection start: %d end: %d" % (cursor.selectionStart(), cursor.selectionEnd()))
-		
-		
-#		# Create a text cursor
-#		cursorReset = self.txtMultilineHex.textCursor()
-#		
-#		# Move the cursor to the beginning of the block
-#		cursorReset.movePosition(QTextCursor.MoveOperation.Start, QTextCursor.MoveMode.MoveAnchor)
-#		
-#		# Set the cursor to the beginning of the text
-##		cursorReset.moveToBlockStart()
-#		
-#		# Create a text block format
-#		formatReset = QTextCharFormat() # QTextBlockFormat()
-#		formatReset.setBackground(QColor(0, 0, 0, 0))  # Transparent background color
-#		
-#		# Apply the format to the text
-##		cursorReset.setBlockFormat(formatReset)
-#		cursorReset.setCharFormat(formatReset)
-#		
-#		# Set the text cursor
-#		self.txtMultilineHex.setTextCursor(cursorReset)
-#		self.txtMultilineHex.ensureCursorVisible()
-		
-#		self.txtMultilineHex.setTextCursor(QTextCursor())
-#		self.txtMultilineHex.ensureCursorVisible()
+		print("txtMultiline Selection start: %d end: %d" % (cursor.selectionStart(), cursor.selectionEnd()))
 		
 		self.txtMultilineHex.setStyleSheet("background-color: control;")
 		
 		c = self.txtMultilineHex.textCursor()
 		c.clearSelection()
-		c.setPosition(cursor.selectionStart() * 3)
-		c.setPosition((cursor.selectionEnd() * 3), QTextCursor.MoveMode.KeepAnchor)
+		txtLen = len(self.txtMultilineHex.toPlainText())
+		startPos = (cursor.selectionStart() * 3) - 0
+		if startPos > txtLen:
+			startPos -= 1
+		c.setPosition(startPos)
+		endPos = (cursor.selectionEnd() * 3) - 1
+		if endPos > txtLen:
+			endPos -= 1
+		print(f"txtLen = {txtLen}")
+		c.setPosition(endPos, QTextCursor.MoveMode.KeepAnchor)
 		self.txtMultilineHex.setStyleSheet("selection-background-color: #ff0000;")
-		
+		self.updateTxt = False
+		self.updateHexTxt = False
 		self.txtMultilineHex.setTextCursor(c)
+		self.updateTxt = True
+		self.updateHexTxt = True
 		self.txtMultilineHex.ensureCursorVisible()
-#		
-#		color = QColor(255, 0, 0)  # Red color
-#		format = QTextCharFormat()
-##		format.setForeground(color)
-#		format.setBackground(color)
-#		
-#		# Apply the format to the text
-#		c.setCharFormat(format)
-##		# Create a new text block format
-##		formatReset = QTextBlockFormat()
-##		formatReset.setBackground(QColor(0, 0, 0, 0))  # Transparent background color
-##		
-##		# Set the text block format to the entire text
-##		self.txtMultilineHex.setTextFormat(formatReset)
-#		
-#		self.txtMultilineHex.setTextCursor(c)
-#		self.txtMultilineHex.ensureCursorVisible()
-##		self.txtMultilineHex.setTextCursor(QTextCursor())
-##		self.txtMultilineHex.ensureCursorVisible()
-##		c.setTextColor(color)
-##		
-##		# Create a text cursor
-##		cursor = text_edit.textCursor()
-##		
-##		# Move the cursor to the beginning of the text
-##		cursor.movePosition(QTextCursor.Start)
-#		
-#		# Set the text color
-##		c.setTextColor(color)
-#		
-##		# Get the cursor position
-##		cursor_pos = self.txtMultiline.cursorPosition()
-##		
-##		print("Cursor position:", cursor_pos)
-##		
-##		if cursor_pos == 0:
-##			print("No text is selected.")
-##		else:
-##			print("Selected text:", self.txtMultiline.toPlainText()[:cursor_pos])
-#		
-#		
-#		# Get the start and end positions of the selected text
-##		start_pos = self.txtMultiline.selectionStart()
-##		end_pos = self.txtMultiline.selectionEnd()
-##		
-##		print("Start position:", start_pos)
-##		print("End position:", end_pos)
-##		
-##		if start_pos == end_pos:
-##			print("No text is selected.")
-##		else:
-##			print("Selected text:", self.txtMultiline.toPlainText()[start_pos:end_pos])
 		
 	def setText(self, text):
+		if not self.updateTxt:
+			return
+		
+		self.updateTxt = False
 		self.txtMultiline.insertPlainText(text)
 		self.setTxtHex(text)
+		self.updateTxt = True
 		
 	def setTxtHex(self, text:str = None):
 		self.txtAsString = text
@@ -193,7 +212,6 @@ class QTextEditHEXSplitter(QWidget):
 		try:
 			self.txtInBytes = self.txtAsString.encode("utf-8")
 			self.hexData = [format(byte, '02x') for byte in self.txtInBytes] # self.fileContent]
-			# Format the hexadecimal data for display
 			self.formattedHexData = ' '.join(self.hexData)
 			self.txtMultilineHex.setText(str.upper(self.formattedHexData))
 		except Exception as e:
@@ -202,47 +220,29 @@ class QTextEditHEXSplitter(QWidget):
 			
 	def showHex_changed(self, checked):
 		self.splitter.widget(1).setVisible(checked)
-#		
-#	@pyqtSlot(bool)
-#	def checked_changed(self, checked):
-#		self.checked.emit(checked)
+		
 
 class QTextEditHEXSplitterWindow(QMainWindow):
 	"""PyMobiledevice3GUI's main window (GUI or view)."""
 	
 	def __init__(self):
 		super().__init__()
-		self.setWindowTitle("QTextEditHEXSplitter.py - Demo app v0.0.1")
-		self.setFixedSize(1024, 640)
+		self.setWindowTitle("QTextEditHEXSplitter - Demo app v0.0.1")
+		self.setMinimumSize(512, 320)
 		
 		self.layMain = QVBoxLayout()
 		self.wdtMain = QWidget()
 		self.wdtMain.setLayout(self.layMain)
-#		self.setLayout()
-		
-#		swtSmallAbove = QSwitch("QSwitch-Small, label above", SwitchSize.Small, SwitchLabelPos.Above)
-#		
-#		swtSmallBelow = QSwitch("QSwitch-Medium, label below", SwitchSize.Medium, SwitchLabelPos.Below)
-#		swtSmallBefore = QSwitch("QSwitch-Large, label leading", SwitchSize.Large, SwitchLabelPos.Leading)
-#		swtSmallAfter = QSwitch("QSwitch-Small, label trailing", SwitchSize.Small, SwitchLabelPos.Trailing)
 
 		self.lblDesc = QLabel(f"This is a rought demo of the usage of QTextEditHEXSplitter\nwith a mixed matrix of its options")
 		self.layMain.addWidget(self.lblDesc)
-		
 		self.splitter = QTextEditHEXSplitter()
-		
 		self.layMain.addWidget(self.splitter)
-		
 		self.setCentralWidget(self.wdtMain)
-#		self.setBaseSize(WINDOW_SIZE * 2, WINDOW_SIZE)		
-#		self._createMenuBar()
-#		self._createToolBars()
 		
 if __name__ == '__main__':
 	import sys
 	app = QApplication(sys.argv)
-#	w = QSwitch("HELLO QSwitch", SwitchSize.Small)
-#	w.show()
 	win = QTextEditHEXSplitterWindow()
 	win.show()
 	sys.exit(app.exec())

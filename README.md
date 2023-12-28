@@ -31,4 +31,11 @@ class SwitchLabelPos(Enum):
 ```
 
 
-### QTextEditHEXSplitter
+### QHexTextEdit
+The QHexTextEdit is a specialized QTextEdit to allow only HEX values as input. The hex string can be splited with space characters (the spaces are not part of the resulting hex string). This widget is also used as part of the **QHexTextEditSplitter** widget which is described below. 
+
+### QHexTextEditSplitter
+
+![2023-12-28-QMultiTextViewHEXSplitter-Demo-App-Window-resized-02.png](_img/2023-12-28-QTextEditHEXSplitter-Demo-App-Window-resized-02.png)
+
+The QHexTextEditSplitter is a spezialized QWidget with a QSplitter which holds a normal QTextEdit and a synchronized QHexTextEdit. The selection of a partial text in one TextEdit is mirrored to the other TextEdit and vice versa. This also includes changes. Changes in the text or hex string is imediately reflected to the other TextEdit to represent the current text / hex string.
