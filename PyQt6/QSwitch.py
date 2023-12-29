@@ -145,11 +145,7 @@ class Switch(QAbstractButton):
 		self._switchChecked = new_switchChecked
 		self.setChecked(new_switchChecked)
 		self.dPtr.animate(new_switchChecked)
-		
-#	def setCheckedNG(self, checked):
-#		self.setChecked(checked)
-#		self.dPtr.animate(checked)
-		
+
 #	def sizeHint(self):
 #		if self.switchSize == SwitchSize.Small:
 #			return QSize(36, 21)
@@ -213,9 +209,6 @@ class QSwitch(QWidget):
 				self.layout().addWidget(self.switch)
 		self.margin = QMargins(0, 0, 0, 0)
 		self.layout().setContentsMargins(self.margin)
-#		self.switch.setContentsMargins(self.margin)
-#		self.lblDesc.setContentsMargins(self.margin)
-#		self.setContentsMargins(self.margin)
 		
 	def setChecked(self, checked):
 		self.switch.switchChecked = checked

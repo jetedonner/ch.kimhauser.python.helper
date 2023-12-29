@@ -3,11 +3,11 @@
 # -*- coding: utf-8 -*-
 
 """
-	QHEXTextEdit / QTextEditHEXSplitter v.0.0.1 - 2023-12-28 (Python3 / PyQt6 GUI extension)
+	QHEXTextEdit / QHEXTextEditSplitter v.0.0.1 - 2023-12-28 (Python3 / PyQt6 GUI extension)
 
 	This are two new Python 3 / PyQt6 Widgets that show text values in a QTextEdit and a synchronized specialized QTextEdit namely QHEXTextEdit to represent the string as HEX value.
 	The widget aims to follow the PyQt6 coding guidelines and has - beside PyQt6 - no dependensies.
-	The drawing of the switch is completely done with PyQt6 functionality
+	The drawing of the widget is completely done with PyQt6 functionality
 
 	Author:		DaVe inc. Kim-David Hauser
 	License:	MIT
@@ -24,30 +24,10 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6 import uic, QtWidgets
 
-#class SwitchSize(Enum):
-#	Small = 1
-#	Medium = 2
-#	Large = 3
-#
+from pyqtSwitch import *
+from pyqtHEXTextEdit import *
 
-class QHEXTextEdit(QTextEdit):
-	
-	def __init__(self, parent=None):
-		QTextEdit.__init__(self, parent=parent)
-		cf = QTextCharFormat()
-		cf.setFontCapitalization(QFont.Capitalization.AllUppercase)
-		self.setCurrentCharFormat(cf)
-	
-	def keyPressEvent(self, event):
-		key = event.key()
-#		event.text().hex
-#		event.text().isalnum() or 
-		if key in (Qt.Key.Key_0, Qt.Key.Key_1, Qt.Key.Key_2, Qt.Key.Key_3, Qt.Key.Key_4, Qt.Key.Key_5, Qt.Key.Key_6, Qt.Key.Key_7, Qt.Key.Key_8, Qt.Key.Key_9, Qt.Key.Key_A, Qt.Key.Key_B, Qt.Key.Key_C, Qt.Key.Key_D, Qt.Key.Key_E, Qt.Key.Key_F, Qt.Key.Key_Space, Qt.Key.Key_Backspace, Qt.Key.Key_Delete, Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
-			super().keyPressEvent(event)
-		else:
-			event.ignore()
-		
-class QTextEditHEXSplitter(QWidget):
+class QHEXTextEditSplitter(QWidget):
 		
 	updateTxt:bool = True
 	updateHexTxt:bool = True
@@ -79,10 +59,10 @@ class QTextEditHEXSplitter(QWidget):
 		self.splitter.addWidget(self.txtMultiline)
 		self.splitter.addWidget(self.txtMultilineHex)
 		
-		self.showHex = QCheckBox("HEX View")
-		self.showHex.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
-		self.showHex.setChecked(True)
-		self.showHex.stateChanged.connect(self.showHex_changed)
+		self.swtShowHex = QSwitch("HEX View", SwitchSize.Small, SwitchLabelPos.Trailing)
+		self.swtShowHex.checked.connect(self.swtShowHex_checked)
+		self.swtShowHex.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+		self.swtShowHex.setChecked(True)
 		
 		self.cmbEncoding = QComboBox()
 		self.cmbEncoding.addItem("utf-8")
@@ -101,7 +81,7 @@ class QTextEditHEXSplitter(QWidget):
 		layoutTop.addWidget(encodingLabel)
 		layoutTop.addWidget(self.cmbEncoding)
 		
-		layoutTop.addWidget(self.showHex)
+		layoutTop.addWidget(self.swtShowHex)
 		
 		self.layMain.addWidget(widTop)
 		self.layMain.addWidget(self.splitter)
@@ -163,7 +143,6 @@ class QTextEditHEXSplitter(QWidget):
 		self.updateTxt = False
 		self.updateHexTxt = False
 		self.setTxtHex()
-		#		cursor.setPosition(pos)
 		self.updateTxt = True
 		self.updateHexTxt = True
 		
@@ -217,32 +196,35 @@ class QTextEditHEXSplitter(QWidget):
 		except Exception as e:
 			print(f"Exception: '{e}' while converting text '{self.txtAsString}' to HEX string")
 			pass
-			
+	
+	def swtShowHex_checked(self, checked):
+		self.splitter.widget(1).setVisible(checked)
+		pass
+		
 	def showHex_changed(self, checked):
 		self.splitter.widget(1).setVisible(checked)
 		
-
-class QTextEditHEXSplitterWindow(QMainWindow):
+class QHEXTextEditSplitterWindow(QMainWindow):
 	"""PyMobiledevice3GUI's main window (GUI or view)."""
 	
 	def __init__(self):
 		super().__init__()
-		self.setWindowTitle("QTextEditHEXSplitter - Demo app v0.0.1")
+		self.setWindowTitle("QHEXTextEditSplitter - Demo app v0.0.1")
 		self.setMinimumSize(512, 320)
 		
 		self.layMain = QVBoxLayout()
 		self.wdtMain = QWidget()
 		self.wdtMain.setLayout(self.layMain)
 
-		self.lblDesc = QLabel(f"This is a rought demo of the usage of QTextEditHEXSplitter\nwith a mixed matrix of its options")
+		self.lblDesc = QLabel(f"This is a rought demo of the usage of QHEXTextEditSplitter with a mixed matrix of its options")
 		self.layMain.addWidget(self.lblDesc)
-		self.splitter = QTextEditHEXSplitter()
+		self.splitter = QHEXTextEditSplitter()
 		self.layMain.addWidget(self.splitter)
 		self.setCentralWidget(self.wdtMain)
 		
 if __name__ == '__main__':
 	import sys
 	app = QApplication(sys.argv)
-	win = QTextEditHEXSplitterWindow()
-	win.show()
+	win2 = QHEXTextEditSplitterWindow()
+	win2.show()
 	sys.exit(app.exec())
