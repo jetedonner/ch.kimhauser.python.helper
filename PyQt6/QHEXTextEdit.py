@@ -24,7 +24,7 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6 import uic, QtWidgets
 
-from pyqtSwitch import *
+from QSwitch import *
 
 class QHEXTextEdit(QTextEdit):
 	
