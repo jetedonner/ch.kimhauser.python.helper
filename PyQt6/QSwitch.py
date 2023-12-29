@@ -145,13 +145,6 @@ class Switch(QAbstractButton):
 		self._switchChecked = new_switchChecked
 		self.setChecked(new_switchChecked)
 		self.dPtr.animate(new_switchChecked)
-
-#	def sizeHint(self):
-#		if self.switchSize == SwitchSize.Small:
-#			return QSize(36, 21)
-#		elif self.switchSize == SwitchSize.Medium:
-#			return QSize(48, 29)
-#		return QSize(84, 42)
 	
 	def paintEvent(self, event):
 		painter = QPainter(self)
@@ -233,7 +226,7 @@ class QSwitchDemoWindow(QMainWindow):
 		swtSmallBefore = QSwitch("QSwitch-Large, label leading", SwitchSize.Large, SwitchLabelPos.Leading)
 		swtSmallAfter = QSwitch("QSwitch-Small, label trailing", SwitchSize.Small, SwitchLabelPos.Trailing)
 
-		self.lblDesc = QLabel(f"This is a rought demo of the usage of QSwitch\nwith a mixed matrix of its options")
+		self.lblDesc = QLabel(f"This is a rought demo of the usage of QSwitch with a mixed matrix of its options")
 		self.layMain.addWidget(self.lblDesc)
 		
 		self.layMain.addWidget(swtSmallAbove)
