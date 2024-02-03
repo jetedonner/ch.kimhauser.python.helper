@@ -202,12 +202,16 @@ class QSwitch(QWidget):
 				self.layout().addWidget(self.switch)
 		self.margin = QMargins(0, 0, 0, 0)
 		self.layout().setContentsMargins(self.margin)
-		
+	
+	def isChecked(self):
+		return self.switch.switchChecked
+
 	def setChecked(self, checked):
 		self.switch.switchChecked = checked
 		
 	@pyqtSlot(bool)
 	def checked_changed(self, checked):
+		self.switch.switchChecked = checked
 		self.checked.emit(checked)
 
 class QSwitchDemoWindow(QMainWindow):

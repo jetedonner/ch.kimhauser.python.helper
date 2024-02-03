@@ -16,7 +16,8 @@
 """
 	
 import array
-from enum import Enum
+#from enum import Enum
+import enum
 
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
@@ -24,8 +25,14 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6 import uic, QtWidgets
 
-from QSwitch import *
-from QHEXTextEdit import *
+from PyQt6.QSwitch import *
+from PyQt6.QHEXTextEdit import *
+
+class HexTextEditPosition(enum.Enum):
+	HexFirst = 1
+	HexLast = 2
+	HexOnly = 3
+	NoHex = 4
 
 class QHEXTextEditSplitter(QWidget):
 		
@@ -34,6 +41,13 @@ class QHEXTextEditSplitter(QWidget):
 	
 	updateSel:bool = True
 	updateHexSel:bool = True
+
+	layoutTopPlaceholer = None
+
+	txtMultiline = None
+	txtMultilineHex = None
+
+	hexTextEditPosition:HexTextEditPosition = HexTextEditPosition.HexFirst
 	
 	def __init__(self, parent=None):
 		QWidget.__init__(self, parent=parent)
@@ -56,8 +70,14 @@ class QHEXTextEditSplitter(QWidget):
 		self.txtMultilineHex.textChanged.connect(self.txtMultilineHex_textchanged)
 		self.txtMultilineHex.selectionChanged.connect(self.txtMultilineHex_selectionchanged)
 		
-		self.splitter.addWidget(self.txtMultiline)
-		self.splitter.addWidget(self.txtMultilineHex)
+		if self.hexTextEditPosition == HexTextEditPosition.HexLast or self.hexTextEditPosition == HexTextEditPosition.NoHex:
+			self.splitter.addWidget(self.txtMultiline)
+			if self.hexTextEditPosition != HexTextEditPosition.NoHex:
+				self.splitter.addWidget(self.txtMultilineHex)
+		elif self.hexTextEditPosition == HexTextEditPosition.HexFirst or self.hexTextEditPosition == HexTextEditPosition.HexOnly:
+			self.splitter.addWidget(self.txtMultilineHex)
+			if self.hexTextEditPosition != HexTextEditPosition.HexOnly:
+				self.splitter.addWidget(self.txtMultiline)
 		
 		self.swtShowHex = QSwitch("HEX View", SwitchSize.Small, SwitchLabelPos.Trailing)
 		self.swtShowHex.checked.connect(self.swtShowHex_checked)
@@ -74,19 +94,24 @@ class QHEXTextEditSplitter(QWidget):
 		encodingLabel = QLabel(f"Encoding:")
 		encodingLabel.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
 		layoutTop = QHBoxLayout()
-		widTop = QWidget()
-		widTop.setLayout(layoutTop)
-		
+		self.layoutTopPlaceholer = QHBoxLayout()
+		self.widTopPlaceholder = QWidget()
+
+		self.widTop = QWidget()
+		self.widTop.setLayout(layoutTop)
+		self.widTopPlaceholder.setLayout(self.layoutTopPlaceholer)
+
+		layoutTop.addWidget(self.widTopPlaceholder)
 		layoutTop.addStretch()
 		layoutTop.addWidget(encodingLabel)
 		layoutTop.addWidget(self.cmbEncoding)
 		
 		layoutTop.addWidget(self.swtShowHex)
 		
-		self.layMain.addWidget(widTop)
+		self.layMain.addWidget(self.widTop)
 		self.layMain.addWidget(self.splitter)
 		
-		self.setText("DEV SAYS: Some amended text to test the new toHEX() function and the save function fix - IT WORKS!!! DEVs amendment ... Some addition!!!")
+		# self.setText("DEV SAYS: Some amended text to test the new toHEX() function and the save function fix - IT WORKS!!! DEVs amendment ... Some addition!!!")
 		
 	def txtMultilineHex_textchanged(self):
 		if not self.updateHexTxt:
@@ -197,6 +222,55 @@ class QHEXTextEditSplitter(QWidget):
 			print(f"Exception: '{e}' while converting text '{self.txtAsString}' to HEX string")
 			pass
 	
+	def setTxtHexNG(self, txtInBytes, showAddress = True, startAddress:int = 0):
+		# self.txtAsString = text
+		# if self.txtAsString is None:
+		# 	self.txtAsString = self.txtMultiline.toPlainText()
+			
+		try:
+			# self.txtInBytes = self.txtAsString.encode("utf-8")
+			self.hexData = [format(byte, '02x') for byte in txtInBytes] # self.fileContent]
+			# print(f'self.hexData = {self.hexData}')
+			# self.formattedHexData = ''
+			# if showAddress:
+			# 	self.formattedHexData = hex(startAddress) + ': ' + str.upper(' '.join(self.hexData))
+			# else:
+			
+			string2 = ""
+			string = ""
+			for i in range(0, len(self.hexData), 16):
+			    current_values = self.hexData[i:i+16]
+			    for single in current_values:
+			    	# print(single)
+			    	# string2 += chr(int(single, 16))
+			    	# string2 += bytearray(int(single, 16)).decode('utf-8')
+			    	integer_value = int(single, 16)
+			    	utf_8_char = chr(integer_value)
+			    	# print(utf_8_char)
+			    	string2 += utf_8_char
+			    	
+			    string2 += "\n"
+			    # print(current_values)
+			    # ascii_array = bytearray(current_values).decode('utf-8')
+			    # string2 = ''.join(ascii_array)
+			    # string2 += "\n"
+			    current_string = ' '.join(current_values)
+			    string += hex(startAddress + i) + ": " + current_string + '\n'
+
+			# print(f'{string}')
+
+			# self.formattedHexData = ' '.join(self.hexData)
+			self.updateTxt = False
+			self.updateHexTxt = False
+			self.txtMultilineHex.doUpdateHexString = False
+			self.txtMultilineHex.setText(string)
+			self.txtMultiline.setText(string2)
+			self.updateTxt = True
+			self.updateHexTxt = True
+		except Exception as e:
+			print(f"Exception: '{e}' while converting bytes '{txtInBytes}' to HEX string")
+			pass
+
 	def swtShowHex_checked(self, checked):
 		self.splitter.widget(1).setVisible(checked)
 		pass

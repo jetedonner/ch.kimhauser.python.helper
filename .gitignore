@@ -161,3 +161,7 @@ cython_debug/
 
 # macOS
 .DS_Store
+ch/kimhauser/python/helper/QConsoleTextEdit.py
+ch/kimhauser/python/helper/QHEXTextEdit.py
+ch/kimhauser/python/helper/QHEXTextEditSplitter.py
+ch/kimhauser/python/helper/QSwitch.py
